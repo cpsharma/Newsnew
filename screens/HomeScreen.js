@@ -1,179 +1,200 @@
-import * as WebBrowser from 'expo-web-browser';
-import * as React from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import React, { PureComponent } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  AsyncStorage,
+  StyleSheet
+} from "react-native";
+import ViewPager from '@react-native-community/viewpager';
+import { Icon, Button } from "react-native-elements";
+import { connect } from "react-redux";
+import PropTypes from "prop-types";
+import Select from "../components/Select";
+import {
+  addCategory,
+  removeCategory,
+  addCountry,
+  removeCountry,
+  settingsUpdated
+} from "../actions";
+import NavigationStateNotifier from "../utils/NavigationStateNotifier";
+import ViewPagerContainer from "../components/ViewPagerContainer";
+import Warning from "../components/Warning";
+import { styles as style } from "./styles";
+import { categories, country } from "../constants";
 
-import { MonoText } from '../components/StyledText';
+class HomeScreen extends PureComponent {
+  componentDidMount = async () => {
+    const onEnter = () => {
+      this.setState({ activeScreen: true });
+    };
 
-export default function HomeScreen() {
-  return (
-    <View style={styles.container}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.welcomeContainer}>
-          <Image
-            source={
-              __DEV__
-                ? require('../assets/images/robot-dev.png')
-                : require('../assets/images/robot-prod.png')
-            }
-            style={styles.welcomeImage}
-          />
-        </View>
+    const onExit = () => {
+      this.setState({ activeScreen: false });
+    };
 
-        <View style={styles.getStartedContainer}>
-          <DevelopmentModeNotice />
+    let root = await AsyncStorage.getAllKeys();
 
-          <Text style={styles.getStartedText}>Open up the code for this screen:</Text>
+    const { category, country } = this.props;
+    const categoryKeys = Object.keys(category);
+    const countryKeys = Object.keys(country);
 
-          <View style={[styles.codeHighlightContainer, styles.homeScreenFilename]}>
-            <MonoText>screens/HomeScreen.js</MonoText>
-          </View>
+    NavigationStateNotifier.newListener(this, onEnter, onExit);
 
-          <Text style={styles.getStartedText}>
-            Change any of the text, save the file, and your app will automatically reload.
-          </Text>
-        </View>
+    if (categoryKeys.length && countryKeys.length && root) {
+      this.props.navigation.navigate("news");
+    }
+  };
 
-        <View style={styles.helpContainer}>
-          <TouchableOpacity onPress={handleHelpPress} style={styles.helpLink}>
-            <Text style={styles.helpLinkText}>Help, it didn’t automatically reload!</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+  state = {
+    activeScreen: true
+  };
 
-      <View style={styles.tabBarInfoContainer}>
-        <Text style={styles.tabBarInfoText}>This is a tab bar. You can edit it in:</Text>
+  checkSubmit = () => {
+    const { category, country } = this.props;
+    const categoryKeys = Object.keys(category);
+    const countryKeys = Object.keys(country);
 
-        <View style={[styles.codeHighlightContainer, styles.navigationFilename]}>
-          <MonoText style={styles.codeHighlightText}>navigation/BottomTabNavigator.js</MonoText>
-        </View>
+    if (categoryKeys.length && countryKeys.length) {
+      return false;
+    }
+    return true;
+  };
+  checkCategory = () => {
+    const { category, country } = this.props;
+    const categoryKeys = Object.keys(category);
+    if (categoryKeys.length) {
+      return false;
+    }
+    return true;
+  };
+
+  render() {
+    return !this.state.activeScreen ? null : (
+      <View style={styles.screenContainer}>
+        <ViewPagerContainer style={{ flex: 1 }}>
+          <ViewPager ref="pages" style={styles.viewPager}>
+            <View style={{ flex: 1 }} key="1">
+              <Image
+                style={{ width: 300, height: 300, alignSelf: "center" }}
+                source={require("../assets/images/headlines-today-logo.png")}
+              />
+              <Text style={styles.screenTitle}>
+                Get breaking news headlines with short description filtered by
+                your interests and country preferences.
+              </Text>
+              <View style={{ flex: 1, justifyContent: "flex-end" }}>
+                <Button
+                  large
+                  iconRight={{ name: "arrow-forward" }}
+                  title="INTERESTS"
+                  buttonStyle={{
+                    backgroundColor: styles.colorPrimary.color,
+                    borderRadius: 3
+                  }}
+                  onPress={() => this.refs.pages.setPage(1)}
+                />
+              </View>
+            </View>
+
+            <View key="2">
+              <ScrollView>
+                {/*   <Warning
+                  country={this.props.country}
+                  category={this.props.category}
+                /> */}
+                <Text style={styles.screenParagraph}>
+                  Put your interests here:{" "}
+                </Text>
+                <Select
+                  add={this.props.addCategory}
+                  remove={this.props.removeCategory}
+                  items={this.props.category}
+                  style={{ marginTop: 10, marginBottom: 10 }}
+                  type="CATEGORY"
+                  options={categories}
+                  icon="call-received"
+                />
+              </ScrollView>
+              <View style={{ flex: 1, justifyContent: "flex-end" }}>
+                <Button
+                  disabled={this.checkCategory()}
+                  large
+                  iconRight={{ name: "arrow-forward" }}
+                  title="COUNTRIES"
+                  buttonStyle={{
+                    backgroundColor: styles.colorPrimary.color,
+                    borderRadius: 3
+                  }}
+                  onPress={() => this.refs.pages.setPage(2)}
+                />
+              </View>
+            </View>
+            <View key="3">
+              {/* <Warning
+                country={this.props.country}
+                category={this.props.category}
+              /> */}
+
+              <Text style={styles.screenParagraph}>
+                Select one or several countries:{" "}
+              </Text>
+              <ScrollView>
+
+                <Select
+                  add={this.props.addCountry}
+                  remove={this.props.removeCountry}
+                  items={this.props.country}
+                  style={{ marginTop: 5 }}
+                  type="COUNTRY"
+                  options={country}
+                  icon="map"
+                />
+              </ScrollView>
+
+              <Button
+                large
+                disabled={this.checkSubmit()}
+                buttonStyle={{
+                  backgroundColor: styles.colorPrimary.color,
+                  borderRadius: 3,
+                  paddingBottom: 20
+                }}
+                color={styles.colorGreyDark1.color}
+                icon={{ name: "check" }}
+                title="DONE"
+                onPress={() => this.props.navigation.navigate("news")}
+              />
+
+
+            </View>
+          </ViewPager>
+        </ViewPagerContainer>
       </View>
-    </View>
-  );
-}
-
-HomeScreen.navigationOptions = {
-  header: null,
-};
-
-function DevelopmentModeNotice() {
-  if (__DEV__) {
-    const learnMoreButton = (
-      <Text onPress={handleLearnMorePress} style={styles.helpLinkText}>
-        Learn more
-      </Text>
-    );
-
-    return (
-      <Text style={styles.developmentModeText}>
-        Development mode is enabled: your app will be slower but you can use useful development
-        tools. {learnMoreButton}
-      </Text>
-    );
-  } else {
-    return (
-      <Text style={styles.developmentModeText}>
-        You are not in development mode: your app will run at full speed.
-      </Text>
     );
   }
 }
 
-function handleLearnMorePress() {
-  WebBrowser.openBrowserAsync('https://docs.expo.io/versions/latest/workflow/development-mode/');
-}
-
-function handleHelpPress() {
-  WebBrowser.openBrowserAsync(
-    'https://docs.expo.io/versions/latest/get-started/create-a-new-app/#making-your-first-change'
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  developmentModeText: {
-    marginBottom: 20,
-    color: 'rgba(0,0,0,0.4)',
-    fontSize: 14,
-    lineHeight: 19,
-    textAlign: 'center',
-  },
-  contentContainer: {
-    paddingTop: 30,
-  },
-  welcomeContainer: {
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  welcomeImage: {
-    width: 100,
-    height: 80,
-    resizeMode: 'contain',
-    marginTop: 3,
-    marginLeft: -10,
-  },
-  getStartedContainer: {
-    alignItems: 'center',
-    marginHorizontal: 50,
-  },
-  homeScreenFilename: {
-    marginVertical: 7,
-  },
-  codeHighlightText: {
-    color: 'rgba(96,100,109, 0.8)',
-  },
-  codeHighlightContainer: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 3,
-    paddingHorizontal: 4,
-  },
-  getStartedText: {
-    fontSize: 17,
-    color: 'rgba(96,100,109, 1)',
-    lineHeight: 24,
-    textAlign: 'center',
-  },
-  tabBarInfoContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    ...Platform.select({
-      ios: {
-        shadowColor: 'black',
-        shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 20,
-      },
-    }),
-    alignItems: 'center',
-    backgroundColor: '#fbfbfb',
-    paddingVertical: 20,
-  },
-  tabBarInfoText: {
-    fontSize: 17,
-    color: 'rgba(96,100,109, 1)',
-    textAlign: 'center',
-  },
-  navigationFilename: {
-    marginTop: 5,
-  },
-  helpContainer: {
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  helpLink: {
-    paddingVertical: 15,
-  },
-  helpLinkText: {
-    fontSize: 14,
-    color: '#2e78b7',
-  },
+const mapStateToProps = ({ category, country }) => ({
+  category,
+  country
 });
+
+const styles = StyleSheet.create(style);
+
+HomeScreen.propTypes = {
+  category: PropTypes.object,
+  country: PropTypes.object,
+  addCategory: PropTypes.func,
+  removeCategory: PropTypes.func,
+  addCountry: PropTypes.func,
+  removeCountry: PropTypes.func,
+  settingsUpdated: PropTypes.func
+};
+
+export default connect(
+  mapStateToProps,
+  { addCategory, removeCategory, addCountry, removeCountry, settingsUpdated }
+)(HomeScreen);

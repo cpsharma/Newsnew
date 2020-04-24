@@ -59,12 +59,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fdfdfd',
     paddingHorizontal: 15,
     paddingVertical: 15,
-    borderWidth: StyleSheet.hairlineWidth,
+    //borderWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: 0,
     borderColor: '#ededed',
   },
+  
   lastOption: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    //borderBottomWidth: StyleSheet.hairlineWidth,
   },
   optionText: {
     fontSize: 15,
